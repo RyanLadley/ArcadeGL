@@ -25,6 +25,24 @@ public:
      virtual glm::vec2 get_location();
   
      virtual glm::vec2 get_dimensions();
+
+     virtual bool intersect(Drawable& object);
+};
+
+//-------------//
+//---Circle---//
+//-----------//
+class Circle: public Drawable{
+protected:
+    glm::vec2 vertex;
+    double radius;
+
+    void update_vertex();
+public:
+    Circle(Texture new_texture, glm::vec2 start_location, glm::vec2 start_dimensions);
+
+    bool intersect(Drawable& object);
+
 };
 
 class Tileable: public Drawable{

@@ -282,7 +282,6 @@ public:
          shader_manager->add_shader("shaders/vertex.glsl", "shaders/fragment.glsl", "thing");
          
          texture_manager = new TextureManager();
-         texture_manager->add_texture("textures/rocket.png", true); 
          texture_manager->add_texture("textures/snake/board_back.png", false); 
          texture_manager->add_texture("textures/snake/board_border.png", false); 
          texture_manager->add_texture("textures/snake/snake.png", false); 

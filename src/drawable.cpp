@@ -30,6 +30,64 @@ glm::vec2 Drawable::get_dimensions(){
     return dimensions;    
 }
 
+bool Drawable::intersect(Drawable& object){
+    glm::vec2 obj_loc = object.get_location();
+    glm::vec2 obj_dim = object.get_dimensions();
+    return (location.x < obj_loc.x + obj_dim.x && location.x +dimensions.x > obj_loc.x &&
+            location.y < obj_loc.y + obj_dim.y && location.y +dimensions.y > obj_loc.y );
+}
+
+//-------------//
+//---Circle---//
+//-----------//
+Circle::Circle(Texture new_texture, glm::vec2 start_location, glm::vec2 start_dimensions)
+  :Drawable(new_texture, start_location, start_dimensions){
+    radius = start_dimensions.x/2;
+    update_vertex();
+}
+
+void Circle::update_vertex(){
+    vertex.x = location.x + radius;
+    vertex.y = location.y + radius;
+}
+
+bool Circle::intersect(Drawable& object){
+    if(this->Drawable::intersect(object)){
+        glm::vec2 obj_loc = object.get_location();
+        glm::vec2 obj_dim = object.get_dimensions();
+        
+        //Calculate expensive circle collision
+        //Half dimensions  used a lot, calulate once
+        glm::vec2 half_dim (
+              obj_dim.x/2,
+              obj_dim.y/2
+        );
+
+        //Get the center point of the rectangle
+        glm::vec2 obj_center(
+            obj_loc.x + half_dim.x,
+            obj_loc.y + half_dim.y
+        );
+
+        //Find distance from center of rect to center of circle
+        glm::vec2 distance = vertex - obj_center;
+
+        //Chack Sides
+        if (distance.x <= half_dim.x || 
+            distance.y <= half_dim.y ){
+            return true; 
+        }
+
+        //Calculate Corners       
+        float a = distance.x - half_dim.x;
+        float b = distance.y - half_dim.y;
+        float corners_squared = (a*a) + (b*b);
+
+        return corners_squared <= (radius * radius);
+    }
+    return false;
+}
+
 //-----------------//
 //----Tileable-----//
 //----------------//
