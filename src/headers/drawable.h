@@ -1,3 +1,5 @@
+#ifndef DRAWABLE_H
+#define DRAWABLE_H
 
 #define GLEW_STATIC
 #define GLM_FORCE_RADIANS
@@ -70,3 +72,5 @@ public:
      //Crop texture so fits given dimensions as specified
      void draw(Renderer *renderer);
 };
+
+#endif

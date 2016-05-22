@@ -70,8 +70,8 @@ class Rocket: public AsteroidsObject{
 private:
     //direction is in radians
     float direction, rotation_accel; 
-    glm::vec2 speed, max_speed;
- 
+    glm::vec2 speed, max_speed, initial_location;
+    
 
     bool right_pressed, left_pressed, forward_pressed;
 
@@ -106,7 +106,7 @@ private:
 
 public:
     Rocket(Texture new_texture, glm::vec2 start_location, glm::vec2 start_dimensions)
-      :AsteroidsObject(new_texture, start_location, start_dimensions), direction(0), speed(glm::vec2(0,0)), max_speed(glm::vec2(2,2)),
+      :AsteroidsObject(new_texture, start_location, start_dimensions), initial_location(start_location), direction(0), speed(glm::vec2(0,0)), max_speed(glm::vec2(2,2)),
       rotation_accel(0), right_pressed(false), left_pressed(false), forward_pressed(false){}
     
     void move(){
@@ -133,8 +133,12 @@ public:
         return direction;
     }
     
-
-
+    void reset(){
+        rotation_accel = 0;
+        direction = 0; 
+        speed= glm::vec2(0,0);  
+        location = initial_location;
+    }
 };
 
 class Beam: public AsteroidsObject{
@@ -157,7 +161,11 @@ public:
     bool is_alive(){
         return alive;
     }
-  
+ 
+    void kill(){
+        alive = false;
+    }
+ 
     void fire_beam(Rocket* rocket){
         direction = rocket->get_direction();
         location = rocket->get_location();
@@ -178,9 +186,30 @@ public:
   
     void draw(Renderer* renderer){
         if(alive){
-            renderer->draw(texture, location, dimensions, direction, glm::vec3(1,1,1)) ;
+            renderer->draw(texture, location, dimensions, direction, glm::vec3(1,1,1));
         }
     }
+};
+
+class Asteroid: public AsteroidsObject{
+private:
+    glm::vec2 speed;
+    float direction;
+
+public:
+    Asteroid(Texture new_texture, glm::vec2 start_location, glm::vec2 start_dimensions)
+      :AsteroidsObject(new_texture, start_location, start_dimensions){
+        direction = rand() % (6);
+        speed = glm::vec2(
+            1 * sin(direction),
+           -1 * cos(direction)
+        );
+    }
+
+    void move(){
+        location += speed;
+    }
+
 };
 
 class AsteroidsGame{
@@ -196,6 +225,7 @@ private:
 
     Rocket* rocket;
     std::vector<Beam*> beams;
+    std::vector<Asteroid*> asteroids; 
 
     bool program_running, game_over;
 
@@ -241,13 +271,7 @@ private:
             }
     }
 
-    void move_beams(){
-        for(std::vector<Beam*>::iterator it = beams.begin(); it != beams.end(); ++it){
-            if((*it)->is_alive())
-                (*it)->move();
-        }
-    }
-
+    //Limits tehe number of beams out at once to how many were initiated
     void shoot(){
         for(std::vector<Beam*>::iterator it = beams.begin(); it != beams.end(); ++it){
             if(!((*it)->is_alive())){//If beam is not alive
@@ -262,6 +286,7 @@ private:
             beams.push_back(new Beam(texture_manager->get_texture("textures/asteroids/beam.png"), glm::vec2(0,0), glm::vec2(2,15)));
         }
     }
+
     void initiate_textures(){
         texture_manager = new TextureManager();
         texture_manager->add_texture("textures/asteroids/board_back.png", false);
@@ -270,14 +295,17 @@ private:
     
         texture_manager->add_texture("textures/asteroids/rocket.png", true);
         texture_manager->add_texture("textures/asteroids/beam.png", true);
+        texture_manager->add_texture("textures/asteroids/asteroid.png", true);
     }
 
 
     void initiate_drawables(){
          glm::vec2 border_dim = glm::vec2(SCREEN_WIDTH*.75, SCREEN_HEIGHT);
          glm::vec2 tile_dim= glm::vec2(20,20);
-         border = new Border(texture_manager->get_texture("textures/asteroids/board_border.png"), glm::vec2(SCREEN_WIDTH/4,0), border_dim, tile_dim, tile_dim);  
-         sidebar = new Tileable(texture_manager->get_texture("textures/asteroids/sidebar.png"), glm::vec2(0,0), glm::vec2(SCREEN_WIDTH/4, SCREEN_HEIGHT), tile_dim);         
+         border = new Border(texture_manager->get_texture("textures/asteroids/board_border.png"), 
+                             glm::vec2(SCREEN_WIDTH/4,0), border_dim, tile_dim, tile_dim);  
+         sidebar = new Tileable(texture_manager->get_texture("textures/asteroids/sidebar.png"), 
+                                glm::vec2(0,0), glm::vec2(SCREEN_WIDTH/4, SCREEN_HEIGHT), tile_dim);         
 
          glm::vec2 board_loc = border->get_internal_location();
          glm::vec2 board_dim = border->get_internal_dimensions();
@@ -285,10 +313,107 @@ private:
          
          glm::vec2 rocket_loc(board_loc.x + board_dim.x/2, board_loc.y + board_dim.y/2);
          rocket = new Rocket(texture_manager->get_texture("textures/asteroids/rocket.png"), rocket_loc, glm::vec2(20,40));
+         initiate_asteroids();
+    }
+
+    void initiate_asteroids(){
+        glm::vec2 board_loc = board->get_location();
+        glm::vec2 board_dim = board->get_dimensions();
+
+        glm::vec2 asteroid_dim(60,60);
+ 
+        for(int i = board_loc.y; i < board_loc.y + board_dim.y; i+=200){
+            asteroids.push_back(new Asteroid(texture_manager->get_texture("textures/asteroids/asteroid.png"), 
+                                glm::vec2(board_loc.x,i), glm::vec2 (60,60)));
+            asteroids.push_back(new Asteroid(texture_manager->get_texture("textures/asteroids/asteroid.png"), 
+                                glm::vec2(board_loc.x+board_dim.x,i), glm::vec2 (60,60)));
+        }
+        for(int j = board_loc.x; j < board_loc.x + board_dim.x; j+=200){
+            asteroids.push_back(new Asteroid(texture_manager->get_texture("textures/asteroids/asteroid.png"), 
+                                glm::vec2(j,board_loc.y), glm::vec2 (60,60)));
+            asteroids.push_back(new Asteroid(texture_manager->get_texture("textures/asteroids/asteroid.png"), 
+                                glm::vec2(j,board_loc.y+board_dim.y), glm::vec2 (60,60)));
+        }
     }
 
     void reset_board(){
+        for(std::vector<Asteroid*>::iterator asteroid = asteroids.begin(); asteroid != asteroids.end(); ++asteroid){
+            delete *asteroid;
+        }
+        asteroids.clear();
+        initiate_asteroids();
+        rocket->reset();
+        for(std::vector<Beam*>::iterator it = beams.begin(); it != beams.end(); ++it){
+            (*it)->kill();
+        }
         game_over = false;
+    }
+
+
+    void draw_objects(){
+        rocket->draw(renderer);
+        for(std::vector<Beam*>::iterator it = beams.begin(); it != beams.end(); ++it){
+            (*it)->draw(renderer);
+        }
+        for(std::vector<Asteroid*>::iterator asteroid = asteroids.begin(); asteroid != asteroids.end(); ++asteroid){
+            (*asteroid)->draw(renderer);
+        }
+    }
+
+    void move_beams(){
+        for(std::vector<Beam*>::iterator it = beams.begin(); it != beams.end(); ++it){
+            if((*it)->is_alive())
+                (*it)->move();
+        }
+    }
+
+    void move_objects(){
+        rocket->move();
+        for(std::vector<Beam*>::iterator it = beams.begin(); it != beams.end(); ++it){
+            move_beams();
+        }
+        for(std::vector<Asteroid*>::iterator asteroid= asteroids.begin(); asteroid != asteroids.end(); ++asteroid){
+            (*asteroid)->move();
+        }
+    }
+
+    bool check_asteroid_v_rocket(){
+        bool collision = false;
+        for(std::vector<Asteroid*>::iterator asteroid = asteroids.begin(); asteroid != asteroids.end(); ++asteroid){
+            if((*asteroid)->intersect(*rocket)){
+                collision = true;
+            }
+        }
+        return collision;
+    }
+
+    void check_asteroid_v_beam(){
+        for(std::vector<Beam*>::iterator it = beams.begin(); it != beams.end(); ++it){
+            for(std::vector<Asteroid*>::iterator asteroid = asteroids.begin(); asteroid != asteroids.end(); ++asteroid){
+            if((*it)->is_alive() && (*it)->intersect(*(*asteroid))){
+                    (*it)->kill();
+                    delete *asteroid;
+                    asteroids.erase(asteroid);
+                    break;
+                }
+            }
+        }
+    }
+
+    void check_boundries(){
+        rocket->check_boundry(*board);
+        for(std::vector<Beam*>::iterator it = beams.begin(); it != beams.end(); ++it){
+            (*it)->check_boundry(*board);
+        }
+        for(std::vector<Asteroid*>::iterator asteroid = asteroids.begin(); asteroid != asteroids.end(); ++asteroid){
+            (*asteroid)->check_boundry(*board);
+        }
+    }
+
+    void check_collisions(){
+        check_boundries();
+        check_asteroid_v_beam();
+        game_over = check_asteroid_v_rocket();
     }
 
 public:
@@ -309,25 +434,20 @@ public:
         game_over = false;
         while(program_running){
             handle_events(&window_event);
+            
             //Clear Screen
             glClearColor(0,0,0,1);
             glClear(GL_COLOR_BUFFER_BIT);
 
-            
             board->draw(renderer);
             
-            rocket->move();
-            rocket->check_boundry(*board);
-
-            rocket->draw(renderer);
- 
-            for(std::vector<Beam*>::iterator it = beams.begin(); it != beams.end(); ++it){
-                move_beams();
-                (*it)->draw(renderer);
-            }
+            move_objects();
+            check_collisions();
+            draw_objects();
 
             sidebar->draw(renderer);
             border->draw(renderer);
+            
             if(game_over){
                 reset_board();
             }           
@@ -401,8 +521,6 @@ int main(int argx, char** argv){
              
     AsteroidsGame* asteroids_game = new AsteroidsGame(window);
     asteroids_game->play_game();
- 
-
  
     SDL_GL_DeleteContext(context);  
     SDL_Quit();
