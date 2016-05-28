@@ -16,24 +16,53 @@
 #include <fstream>
 #include <sstream>
 
-#include "src/headers/shader.h"
-#include "src/headers/texture.h"
-#include "src/headers/renderer.h"
-#include "src/headers/drawable.h"
+#include "src/shared/headers/shader.h"
+#include "src/shared/headers/texture.h"
+#include "src/shared/headers/renderer.h"
+#include "src/shared/headers/drawable.h"
+#include "src/shared/headers/game.h"
+#include "src/shared/headers/observer.h"
+
 #include "src/snake/headers/snake_drawable.h"
 #include "src/snake/headers/edible.h"
 #include "src/snake/headers/snake_game.h"
-//Complie with command: g++ -std=c++11 main.cpp src/snake/snake_game.cpp src/snake/snake_drawable.cpp src/snake/edible.cpp src/shader.cpp src/texture.cpp src/renderer.cpp src/drawable.cpp -o openGL -lSDL2 -lGLEW -lGL -lSOIL
+
+#include "src/breakout/headers/breakout_drawables.h"
+#include "src/breakout/headers/breakout_game.h"
+
+#include "src/asteroids/headers/asteroids_drawables.h"
+#include "src/asteroids/headers/asteroids_game.h"
+//Complie with command: g++ -std=c++11 main.cpp src/snake/snake_game.cpp src/snake/snake_drawable.cpp src/snake/edible.cpp src/breakout/breakout_drawables.cpp src/breakout/breakout_game.cpp src/asteroids/asteroids_drawables.cpp src/asteroids/asteroids_game.cpp src/shared/shader.cpp src/shared/texture.cpp src/shared/renderer.cpp src/shared/drawable.cpp src/shared/game.cpp -o openGL -lSDL2 -lGLEW -lGL -lSOIL
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
 class Button: public Drawable{
 public: 
    Button(Texture new_texture, glm::vec2 start_location, glm::vec2 start_dimensions)
-     :Drawable(new_texture, start_location, start_dimensions){} 
+     :Drawable(new_texture, start_location, start_dimensions) {} 
 
+      bool check_press(int mouse_x, int mouse_y){
+          return (location.x < mouse_x && location.x + dimensions.x > mouse_x &&
+                  location.y < mouse_y && location.y + dimensions.y > mouse_y );
+      }
+
+      virtual void pressed(){
+          std::cout<<"Wow, you pressed a button" << std::endl;
+      } 
 };
 
+class GameButton: public Button{
+private:
+    Game* game;
+
+public:
+    GameButton(Texture new_texture, glm::vec2 start_location, glm::vec2 start_dimensions, Game* new_game)
+      :Button(new_texture, start_location, start_dimensions), game(new_game){}
+
+    void pressed(){
+        game->play_game();
+    }
+};
 
 class MainMenu{
 private:
@@ -46,13 +75,9 @@ private:
      Renderer* renderer;
      
      Tileable* background;
-     Button* snake_btn;
-     Button* breakout_btn;
-     Button* asteroids_btn;
-     Button* con_btn;
-     
+     std::vector<Button*> buttons;
     
-    void handle_events(SDL_Event* window_event){
+     void handle_events(SDL_Event* window_event){
             while(SDL_PollEvent(window_event)){
                 switch(window_event->type){
                     case SDL_QUIT: 
@@ -68,15 +93,31 @@ private:
                     case SDL_MOUSEBUTTONDOWN:
                         int mouse_x, mouse_y;
                         SDL_GetMouseState(&mouse_x, &mouse_y); 
-                        std::cout<< "x: " << mouse_x << "\ty: " << mouse_y << std::endl;
+                        press_button(mouse_x, mouse_y);
                         break;                      
                 }
             }
     }
 
+    void press_button(int mouse_x, int mouse_y){
+        for(std::vector<Button*>::iterator it = buttons.begin(); it != buttons.end(); ++it){
+            if((*it)->check_press(mouse_x, mouse_y)){
+                (*it)->pressed();
+            }
+        }
+    }
+
     void initiate_drawables(){
          background = new Tileable(texture_manager->get_texture("textures/main/background.png"), glm::vec2(0,0),glm::vec2(screen_width, screen_height), glm::vec2(40,40));
-         snake_btn = new Button(texture_manager-> get_texture("textures/main/snake_button.png"), glm::vec2(40,40), glm::vec2(160,160));
+         glm::vec2 button_dim(180,180);
+         //Snake Button
+         buttons.push_back(new GameButton(texture_manager-> get_texture("textures/main/snake_button.png"), glm::vec2(40,40), button_dim, new SnakeGame(window, screen_width, screen_height)));
+         //Breakout Button
+         buttons.push_back(new GameButton(texture_manager-> get_texture("textures/main/breakout_button.png"), glm::vec2(40,280), button_dim, new BreakoutGame(window, screen_width, screen_height)));
+         //Asteroids Button
+         buttons.push_back(new GameButton(texture_manager-> get_texture("textures/main/asteroids_button.png"), glm::vec2(420,40), button_dim, new AsteroidsGame(window, screen_width, screen_height)));
+         //Construction Button
+         buttons.push_back(new Button(texture_manager-> get_texture("textures/main/under_con.png"), glm::vec2(420,280), button_dim));
      }
 
      void initiate_textures(){
@@ -109,7 +150,9 @@ public:
             glClear(GL_COLOR_BUFFER_BIT);
         
             background->draw(renderer);
-            snake_btn->draw(renderer);
+            for(std::vector<Button*>::iterator it = buttons.begin(); it != buttons.end(); ++it){
+                (*it)->draw(renderer);
+            }
  
             SDL_GL_SwapWindow(window);
         }
@@ -181,8 +224,6 @@ int main(int argx, char** argv){
              
     MainMenu* menu = new MainMenu(window, SCREEN_WIDTH, SCREEN_HEIGHT);
     menu->display();
- 
-
  
     SDL_GL_DeleteContext(context);  
     SDL_Quit();

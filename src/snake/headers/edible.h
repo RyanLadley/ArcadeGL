@@ -19,15 +19,17 @@
 #include <fstream>
 #include <sstream>
 
-#include "../../headers/shader.h"
-#include "../../headers/texture.h"
-#include "../../headers/renderer.h"
-#include "../../headers/drawable.h"
+#include "../../shared/headers/shader.h"
+#include "../../shared/headers/texture.h"
+#include "../../shared/headers/renderer.h"
+#include "../../shared/headers/drawable.h"
 
 class Edible: public Drawable{
 public:
      Edible(Texture new_texture, glm::vec2 start_location, glm::vec2 start_dimensions);
-
+     
+     //Moves edible to specified location;
+     //usually called when edible is eaten or a new game begins
      void change_location(glm::vec2 new_location);
 
 };

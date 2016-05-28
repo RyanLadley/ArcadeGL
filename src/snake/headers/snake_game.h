@@ -19,17 +19,16 @@
 #include <fstream>
 #include <sstream>
 
-#include "../../headers/shader.h"
-#include "../../headers/texture.h"
-#include "../../headers/renderer.h"
-#include "../../headers/drawable.h"
+#include "../../shared/headers/shader.h"
+#include "../../shared/headers/texture.h"
+#include "../../shared/headers/renderer.h"
+#include "../../shared/headers/drawable.h"
+#include "../../shared/headers/game.h"
+
 #include "snake_drawable.h"
 #include "edible.h"
-class SnakeGame{
+class SnakeGame: public Game{
 private:
-    ShaderManager* shader_manager;
-    TextureManager* texture_manager;
-    SDL_Window* window;
     Renderer* renderer;
 
     bool program_running;
@@ -42,9 +41,7 @@ private:
 
     glm::vec2 tile_dim;
     glm::vec2 start_location;
-
-    int screen_width, screen_height; 
- 
+    
     void handle_events(SDL_Event* window_event);
     
     //Moves Edible to random location on board

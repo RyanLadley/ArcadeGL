@@ -1,27 +1,3 @@
-#define GLEW_STATIC
-#define GLM_FORCE_RADIANS
-#include <GL/glew.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/ext.hpp>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_opengl.h>
-#include <chrono>
-#include <cstdio>
-#include <ctime>
-#include <iostream>
-#include <vector>
-#include <map>
-#include <fstream>
-#include <sstream>
-
-#include "../headers/shader.h"
-#include "../headers/texture.h"
-#include "../headers/renderer.h"
-#include "../headers/drawable.h"
-#include "headers/snake_drawable.h"
-#include "headers/edible.h"
 #include "headers/snake_game.h"
 
 void SnakeGame::handle_events(SDL_Event* window_event){
@@ -132,11 +108,9 @@ void SnakeGame::reset(){
 }
 
  SnakeGame::SnakeGame(SDL_Window* active_window, int width, int height)
-   :window(active_window), screen_width(width), screen_height(height){
-     shader_manager = new ShaderManager();
+   :Game(active_window,width, height){
      shader_manager->add_shader("shaders/vertex.glsl", "shaders/fragment.glsl", "thing");
      
-     texture_manager = new TextureManager();
      texture_manager->add_texture("textures/snake/board_back.png", false); 
      texture_manager->add_texture("textures/snake/board_border.png", false); 
      texture_manager->add_texture("textures/snake/snake.png", false); 

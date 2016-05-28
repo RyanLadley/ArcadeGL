@@ -12,10 +12,10 @@
 #include <iostream>
 #include <vector>
 
-#include "../../headers/shader.h"
-#include "../../headers/texture.h"
-#include "../../headers/renderer.h"
-#include "../../headers/drawable.h"
+#include "../../shared/headers/shader.h"
+#include "../../shared/headers/texture.h"
+#include "../../shared/headers/renderer.h"
+#include "../../shared/headers/drawable.h"
 
 class Snake: public Drawable{
 private:
